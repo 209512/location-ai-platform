@@ -92,7 +92,7 @@ class AIService:
                                 "content": f"""
                             위치: 위도 {latitude}, 경도 {longitude}
                             반경: {radius_km}km
-                            카테고리: {category or '모든'}
+                            카테고리: {category or "모든"}
                             요청: {query}
 
                             다음 JSON 형식으로 3-5개 추천해주세요:
