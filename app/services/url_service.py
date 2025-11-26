@@ -3,7 +3,7 @@ import logging
 import random
 import string
 from datetime import datetime
-from typing import Any, Optional, dict
+from typing import Any, Optional
 
 import aioredis
 

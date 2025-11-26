@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from typing import dict
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
