@@ -47,8 +47,9 @@ async def db_session():
     engine = create_async_engine(database_url)
     TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+    # 완전한 스키마 재생성
     async with engine.begin() as conn:
-        # 스키마 완전 재생성
+        # public 스키마 완전 삭제 후 재생성
         await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
         await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
@@ -72,7 +73,8 @@ async def db_session():
                 address VARCHAR,
                 phone VARCHAR,
                 rating FLOAT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         """
             )
