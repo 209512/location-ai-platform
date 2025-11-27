@@ -1,10 +1,14 @@
 import asyncio
+import os
 
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from app.main import app
-from app.models.database import AsyncSessionLocal, Base, engine
+from app.models.database import Base, engine
 
 
 @pytest.fixture(scope="session")
@@ -32,7 +36,24 @@ async def client():
         yield ac
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session():
-    async with AsyncSessionLocal() as session:
-        yield session
+    """PostgreSQL 데이터베이스 세션 for testing"""
+    # CI 환경에서는 PostgreSQL 사용
+    database_url = os.getenv(
+        "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost/testdb"
+    )
+
+    engine = create_async_engine(database_url)
+    TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with TestSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+    await engine.dispose()
