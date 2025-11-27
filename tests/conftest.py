@@ -39,7 +39,7 @@ async def client():
 
 @pytest_asyncio.fixture
 async def db_session():
-    """PostgreSQL 데이터베이스 세션 with complete schema recreation"""
+    """PostgreSQL 데이터베이스 세션 for testing"""
     database_url = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost/testdb"
     )
@@ -58,8 +58,10 @@ async def db_session():
         # PostGIS 확장 생성
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 
-        # 테이블 생성
-        await conn.run_sync(Base.metadata.create_all)
+        # 테이블만 생성 (인덱스 제외)
+        await conn.run_sync(
+            Base.metadata.create_all, tables=[Base.metadata.tables["locations"]]
+        )
 
     async with TestSessionLocal() as session:
         try:
