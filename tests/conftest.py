@@ -3,7 +3,9 @@ import os
 
 import pytest
 import pytest_asyncio
+import sqlalchemy
 from httpx import AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -48,7 +50,12 @@ async def db_session():
     TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with engine.begin() as conn:
-        # checkfirst=True로 이미 존재하는 객체 건너뛰기
+        # 명시적으로 인덱스 삭제 후 테이블 삭제
+        try:
+            await conn.execute(text("DROP INDEX IF EXISTS idx_locations_geom"))
+        except (sqlalchemy.exc.DatabaseError, Exception):
+            pass  # 인덱스가 없는 경우 무시
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
     async with TestSessionLocal() as session:
