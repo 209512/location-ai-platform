@@ -48,9 +48,8 @@ async def db_session():
     TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with engine.begin() as conn:
-        # 기존 테이블 삭제 후 생성
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+        # checkfirst=True로 이미 존재하는 객체 건너뛰기
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
     async with TestSessionLocal() as session:
         try:
