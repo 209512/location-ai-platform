@@ -26,7 +26,7 @@ async def setup_database():
 
 
 @pytest.fixture
-async def client(setup_database):
-    """Create test client"""
+async def client():
+    """Async test client fixture"""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
