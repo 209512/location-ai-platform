@@ -1,18 +1,26 @@
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
+
+from app.main import app
 
 
 @pytest.mark.asyncio
-async def test_root_endpoint(client: AsyncClient):
+async def test_root_endpoint():
     """Test root endpoint"""
-    response = await client.get("/")
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        response = await ac.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "AI Location Platform API"}
 
 
 @pytest.mark.asyncio
-async def test_health_check(client: AsyncClient):
+async def test_health_check():
     """Test health check endpoint"""
-    response = await client.get("/health")
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        response = await ac.get("/health")
     assert response.status_code == 200
     assert "status" in response.json()

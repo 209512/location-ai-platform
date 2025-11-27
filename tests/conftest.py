@@ -4,7 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.main import app
-from app.models.database import Base, engine
+from app.models.database import AsyncSessionLocal, Base, engine
 
 
 @pytest.fixture(scope="session")
@@ -30,3 +30,9 @@ async def client():
     """Async test client fixture"""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture
+async def db_session():
+    async with AsyncSessionLocal() as session:
+        yield session

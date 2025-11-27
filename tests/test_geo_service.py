@@ -15,15 +15,14 @@ async def test_find_nearby_locations():
 
 
 @pytest.mark.asyncio
-async def test_create_location():
+async def test_create_location(db_session):
     """Test creating a new location"""
-    async with AsyncSessionLocal() as db:
-        location = await geo_service.create_location(
-            db=db,
-            name="테스트 장소",
-            latitude=37.5665,
-            longitude=126.9780,
-            category="test",
-        )
-        assert location.name == "테스트 장소"
-        assert location.category == "test"
+    location = await geo_service.create_location(
+        db=db_session,
+        name="테스트 장소",
+        latitude=37.5665,
+        longitude=126.9780,
+        category="test",
+    )
+    assert location.name == "테스트 장소"
+    assert location.latitude == 37.5665
