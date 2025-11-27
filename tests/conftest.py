@@ -3,7 +3,6 @@ import os
 
 import pytest
 import pytest_asyncio
-import sqlalchemy
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -40,8 +39,7 @@ async def client():
 
 @pytest_asyncio.fixture
 async def db_session():
-    """PostgreSQL 데이터베이스 세션 for testing"""
-    # CI 환경에서는 PostgreSQL 사용
+    """PostgreSQL 데이터베이스 세션 with complete schema recreation"""
     database_url = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost/testdb"
     )
@@ -49,14 +47,19 @@ async def db_session():
     engine = create_async_engine(database_url)
     TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+    # 완전한 스키마 재생성
     async with engine.begin() as conn:
-        # 명시적으로 인덱스 삭제 후 테이블 삭제
-        try:
-            await conn.execute(text("DROP INDEX IF EXISTS idx_locations_geom"))
-        except (sqlalchemy.exc.DatabaseError, Exception):
-            pass  # 인덱스가 없는 경우 무시
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+        # public 스키마 완전 삭제 후 재생성
+        await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+
+        # PostGIS 확장 생성
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+
+        # 테이블 생성
+        await conn.run_sync(Base.metadata.create_all)
 
     async with TestSessionLocal() as session:
         try:
