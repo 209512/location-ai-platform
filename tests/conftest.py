@@ -47,9 +47,8 @@ async def db_session():
     engine = create_async_engine(database_url)
     TestSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    # 완전한 스키마 재생성
     async with engine.begin() as conn:
-        # public 스키마 완전 삭제 후 재생성
+        # 스키마 완전 재생성
         await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
         await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
@@ -58,9 +57,25 @@ async def db_session():
         # PostGIS 확장 생성
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 
-        # 테이블만 생성 (인덱스 제외)
-        await conn.run_sync(
-            Base.metadata.create_all, tables=[Base.metadata.tables["locations"]]
+        # 테이블 구조만 직접 생성 (인덱스 제외)
+        await conn.execute(
+            text(
+                """
+            CREATE TABLE locations (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                description TEXT,
+                latitude FLOAT NOT NULL,
+                longitude FLOAT NOT NULL,
+                geom GEOMETRY(POINT, 4326),
+                category VARCHAR,
+                address VARCHAR,
+                phone VARCHAR,
+                rating FLOAT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+            )
         )
 
     async with TestSessionLocal() as session:
